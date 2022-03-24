@@ -1,6 +1,9 @@
 mod args;
 use args::{Top, ListArgs, NotifyArgs }; //NotifyArgs
 
+mod notify;
+use notify::Notifier;
+
 use std::convert::TryInto;
 use std::{thread, time::Duration};
 use chrono::Local;
@@ -30,8 +33,10 @@ fn run_list_command(ListArgs { nut_host, nut_host_port, nut_user, nut_user_pass 
     Ok(())
 }
 
-fn watch(NotifyArgs { nut_host, nut_host_port, nut_user, nut_user_pass, gotify_url, ups_name, nut_polling_secs, ups_variable, discharge_status_text, charge_status_text }: NotifyArgs)
+fn watch(NotifyArgs { nut_host, nut_host_port, nut_user, nut_user_pass, gotify_url, gotify_token, ups_name, nut_polling_secs, ups_variable, discharge_status_text, charge_status_text }: NotifyArgs)
         -> Result<(), Box<dyn std::error::Error>> {
+    let notifier = Notifier::new(gotify_url.as_str(), gotify_token.as_str());
+
     let interval = Duration::from_secs(nut_polling_secs);
     let auth = Some(Auth::new(nut_user, Some(nut_user_pass)));
     let config = ConfigBuilder::new()
@@ -55,7 +60,7 @@ fn watch(NotifyArgs { nut_host, nut_host_port, nut_user, nut_user_pass, gotify_u
 
             if previous_status == discharge_status_text {
                 let notice_params = [("message", "INIT - UPS ONBATT - Discharging"), ("priority", "10")];
-                notify(&gotify_url, &notice_params);
+                notifier.send(&notice_params)
             }
         } else {
             if status == charge_status_text && previous_status == discharge_status_text {
@@ -63,13 +68,13 @@ fn watch(NotifyArgs { nut_host, nut_host_port, nut_user, nut_user_pass, gotify_u
     
                 println!("ONLINE");
                 let notice_params = [("message", "UPS ONLINE - Charging"), ("priority", "10")];
-                notify(&gotify_url, &notice_params);
+                notifier.send(&notice_params)
             } else if status == discharge_status_text && previous_status == charge_status_text {
                 previous_status = discharge_status_text.clone();
     
                 println!("ONBATT!!");
                 let notice_params = [("message", "UPS ONBATT - Discharging"), ("priority", "10")];
-                notify(&gotify_url, &notice_params);
+                notifier.send(&notice_params)
             }
         }
 
@@ -83,24 +88,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match top.command {
         args::SubCommand::ListVars(args) => run_list_command(args),
         args::SubCommand::Watch(args) => watch(args),
-    }
-}
-
-fn notify(gotify_url: &str, notice_params: &[(&str, &str); 2])  {
-    let client = reqwest::blocking::Client::new();
-    let mut resp = client.post(gotify_url)
-        .form(&notice_params)
-        .send();
-
-    let mut ix = 1;
-    while let Err(_) = resp {
-        println!("Retrying notification {}", &ix);
-
-        resp = client.post(gotify_url)
-            .form(&notice_params)
-            .send();
-        ix = ix + 1;
-
-        thread::sleep(Duration::from_secs(4))
     }
 }

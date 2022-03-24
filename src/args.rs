@@ -48,6 +48,9 @@ pub struct NotifyArgs {
     #[argh(option,  description = "notification URL", short = 'u')]
     pub gotify_url: String,
 
+    #[argh(option,  description = "notification token", short = 'p')]
+    pub gotify_token: String,
+
     #[argh(option, description = "ups name", short = 'b', default = "String::from(\"ups\")")]
     pub ups_name: String,
 
