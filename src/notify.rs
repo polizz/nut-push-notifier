@@ -26,6 +26,7 @@ impl<'a> Notifier<'a> {
   
         resp = client.post(self.gotify_url)
             .form(&notice_params)
+            .header("x-gotify-key", self.gotify_token)
             .send();
         ix = ix + 1;
   
