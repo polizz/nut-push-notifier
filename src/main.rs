@@ -1,3 +1,7 @@
+use tracing::{info, warn};
+use tracing_subscriber::EnvFilter;
+use color_eyre::Report;
+
 mod args;
 use args::{Top, ListArgs, NotifyArgs }; //NotifyArgs
 
@@ -6,12 +10,11 @@ use notify::Notifier;
 
 use std::convert::TryInto;
 use std::{thread, time::Duration};
-use chrono::Local;
 use rups::blocking::Connection;
 use rups::{Auth, ConfigBuilder};
 
-fn run_list_command(ListArgs { nut_host, nut_host_port, nut_user, nut_user_pass }: ListArgs)
-        -> Result<(), Box<dyn std::error::Error>> {
+fn run_list_command(args: ListArgs) -> Result<(), Report> {
+    let ListArgs { nut_host, nut_host_port, nut_user, nut_user_pass } = args;
     let auth = Some(Auth::new(nut_user, Some(nut_user_pass)));
     let config = ConfigBuilder::new()
         .with_host((nut_host, nut_host_port).try_into().unwrap_or_default())
@@ -23,18 +26,17 @@ fn run_list_command(ListArgs { nut_host, nut_host_port, nut_user, nut_user_pass 
     conn.list_ups()?
         .iter()
         .for_each(|(name, desc)| {
-            println!("UPS Name: {}, Description: {}", &name, &desc);
+            info!("UPS Name: {}, Description: {}", &name, &desc);
 
             conn.list_vars(&name).unwrap()
                 .iter()
-                .for_each(|val| println!("\t- {}", &val))
+                .for_each(|val| info!("\t- {}", &val))
         });
 
     Ok(())
 }
 
-fn watch(args: NotifyArgs)
-        -> Result<(), Box<dyn std::error::Error>> {
+fn watch(args: NotifyArgs) -> Result<(), Report> {
     let NotifyArgs {
         nut_host, 
         nut_host_port, 
@@ -66,11 +68,11 @@ fn watch(args: NotifyArgs)
         let ups_variable = conn.get_var(&ups_name[..], &ups_variable[..])?;
         let status = ups_variable.value();
 
-        println!("{} \t=> Got status => {}", Local::now().format("[%Y-%m-%d]-[%H:%M:%S]"), &status);
+        info!(%status);
 
         if previous_status == "" {
             previous_status = status.clone();
-            println!("INIT ON {}", &previous_status);
+            info!(%previous_status, "CAME ONLINE WITH STATUS");
 
             if previous_status == discharge_status_text {
                 let notice_params = [("message", "INIT - UPS ONBATT - Discharging"), ("priority", "10")];
@@ -80,13 +82,13 @@ fn watch(args: NotifyArgs)
             if status == charge_status_text && previous_status == discharge_status_text {
                 previous_status = charge_status_text.clone();
     
-                println!("ONLINE");
+                info!("NOW ONLINE");
                 let notice_params = [("message", "UPS ONLINE - Charging"), ("priority", "10")];
                 notifier.send(&notice_params)
             } else if status == discharge_status_text && previous_status == charge_status_text {
                 previous_status = discharge_status_text.clone();
     
-                println!("ONBATT!!");
+                warn!("NOW ONBATT!!");
                 let notice_params = [("message", "UPS ONBATT - Discharging"), ("priority", "10")];
                 notifier.send(&notice_params)
             }
@@ -96,7 +98,19 @@ fn watch(args: NotifyArgs)
     };
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Report> {
+    if std::env::var("RUST_BACKTRACE").is_err() {
+        std::env::set_var("RUST_BACKTRACE", "1")
+    }
+    color_eyre::install()?;
+
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info")
+    }
+    tracing_subscriber::fmt::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+
     let top: Top = argh::from_env();
     
     match top.command {
