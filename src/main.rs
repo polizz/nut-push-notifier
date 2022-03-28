@@ -64,7 +64,6 @@ fn watch(args: NotifyArgs) -> Result<(), Report> {
         .build();
     let mut conn = Connection::new(&config)?;
 
-    // let mut previous_status = ups_state.status;
     info!(%ups_state.status, "STARTUP WITH STATUS");
 
     loop {
