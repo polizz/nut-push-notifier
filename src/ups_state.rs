@@ -56,3 +56,55 @@ impl fmt::Display for UpsStatus {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn can_create_ups_state() {
+        let ups_state = UpsState::new("charging".to_string(), "discharging".to_string());
+
+        assert_eq!(ups_state.status, UpsStatus::Startup);
+        assert_eq!(ups_state.is_state_changed(), false);
+    }
+
+    #[test]
+    fn can_update_status_from_str() {
+        let online = "ONLINE".to_string();
+        let onbatt: String = "ONBATTERY".to_string();
+        let mut ups_state = UpsState::new(online.clone(), onbatt.clone());
+
+        ups_state.update_status_from_str(online);
+
+        assert_eq!(ups_state.status, UpsStatus::Online);
+        assert_eq!(ups_state.is_state_changed(), true);
+    }
+
+    #[test]
+    fn state_changed_resets_after_no_change() {
+        let online = "ONLINE".to_string();
+        let onbatt = "ONBATTERY".to_string();
+        let mut ups_state = UpsState::new(online.clone(), onbatt.clone());
+
+        ups_state.update_status_from_str(online.clone());
+        ups_state.update_status_from_str(online.clone());
+
+        assert_eq!(ups_state.status, UpsStatus::Online);
+        assert_eq!(ups_state.is_state_changed(), false);
+    }
+
+    #[test]
+    fn unknown_state_text_from_ups() {
+        let online = "ONLINE".to_string();
+        let onbatt = "ONBATTERY".to_string();
+        let unknown = "UNKNOWN STATE".to_string();
+
+        let mut ups_state = UpsState::new(online.clone(), onbatt.clone());
+
+        ups_state.update_status_from_str(unknown.clone());
+
+        assert_eq!(ups_state.status, UpsStatus::None(unknown));
+        assert_eq!(ups_state.is_state_changed(), true);
+    }
+}
