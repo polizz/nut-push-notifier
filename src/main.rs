@@ -1,6 +1,9 @@
-use tracing::{info, warn};
+use tracing::{info, warn, debug};
 use tracing_subscriber::EnvFilter;
 use color_eyre::Report;
+
+mod ups_status;
+use ups_status::UpsStatus;
 
 mod args;
 use args::{Top, ListArgs, NotifyArgs }; //NotifyArgs
@@ -46,9 +49,10 @@ fn watch(args: NotifyArgs) -> Result<(), Report> {
         gotify_token, 
         ups_name, 
         nut_polling_secs, 
-        ups_variable, 
-        discharge_status_text, 
-        charge_status_text 
+        ups_variable,
+        ..
+        // discharge_status_text, 
+        // charge_status_text 
     } = args;
 
     let notifier = Notifier::new(gotify_url.as_str(), gotify_token.as_str());
@@ -62,33 +66,36 @@ fn watch(args: NotifyArgs) -> Result<(), Report> {
         .build();
     let mut conn = Connection::new(&config)?;
 
-    let mut previous_status = String::new();
+    let mut previous_status = UpsStatus::Startup;
 
     loop {
         let ups_variable = conn.get_var(&ups_name[..], &ups_variable[..])?;
-        let status = ups_variable.value();
+        let status: UpsStatus = ups_variable.value().into();
 
+        debug!(?status, ?ups_variable, "ups_variable");
         info!(%status);
 
-        if previous_status == "" {
-            previous_status = status.clone();
-            info!(%previous_status, "CAME ONLINE WITH STATUS");
+        if previous_status == UpsStatus::Startup {
+            previous_status = status;
+            info!(%previous_status, "STARTUP WITH STATUS");
 
-            if previous_status == discharge_status_text {
+            if previous_status == UpsStatus::OnBattery {
                 let notice_params = [("message", "INIT - UPS ONBATT - Discharging"), ("priority", "10")];
                 notifier.send(&notice_params)
             }
         } else {
-            if status == charge_status_text && previous_status == discharge_status_text {
-                previous_status = charge_status_text.clone();
+            if status == UpsStatus::Online && previous_status == UpsStatus::OnBattery {
+                previous_status = UpsStatus::Online;
     
                 info!("NOW ONLINE");
+
                 let notice_params = [("message", "UPS ONLINE - Charging"), ("priority", "10")];
                 notifier.send(&notice_params)
-            } else if status == discharge_status_text && previous_status == charge_status_text {
-                previous_status = discharge_status_text.clone();
+            } else if status == UpsStatus::OnBattery && previous_status == UpsStatus::Online {
+                previous_status = UpsStatus::OnBattery;
     
                 warn!("NOW ONBATT!!");
+
                 let notice_params = [("message", "UPS ONBATT - Discharging"), ("priority", "10")];
                 notifier.send(&notice_params)
             }
