@@ -9,7 +9,7 @@ mod args;
 use args::Top;
 
 mod commands;
-use commands::{watch, list};
+use commands::{Command, Watch, list};
 
 fn main() -> Result<(), Report> {
     if std::env::var("RUST_BACKTRACE").is_err() {
@@ -29,6 +29,14 @@ fn main() -> Result<(), Report> {
     
     match top.command {
         args::SubCommand::ListVars(args) => list(args),
-        args::SubCommand::Watch(args) => watch(args),
+        args::SubCommand::Watch(args) => Watch::execute(args),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn smoke() {
+        
     }
 }
