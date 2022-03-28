@@ -21,20 +21,34 @@ fn run_list_command(ListArgs { nut_host, nut_host_port, nut_user, nut_user_pass 
     let mut conn = Connection::new(&config)?;
 
     conn.list_ups()?
-    .iter()
-    .for_each(|(name, desc)| {
-        println!("UPS Name: {}, Description: {}", &name, &desc);
+        .iter()
+        .for_each(|(name, desc)| {
+            println!("UPS Name: {}, Description: {}", &name, &desc);
 
-        conn.list_vars(&name).unwrap()
-            .iter()
-            .for_each(|val| println!("\t- {}", &val))
-    });
+            conn.list_vars(&name).unwrap()
+                .iter()
+                .for_each(|val| println!("\t- {}", &val))
+        });
 
     Ok(())
 }
 
-fn watch(NotifyArgs { nut_host, nut_host_port, nut_user, nut_user_pass, gotify_url, gotify_token, ups_name, nut_polling_secs, ups_variable, discharge_status_text, charge_status_text }: NotifyArgs)
+fn watch(args: NotifyArgs)
         -> Result<(), Box<dyn std::error::Error>> {
+    let NotifyArgs {
+        nut_host, 
+        nut_host_port, 
+        nut_user, 
+        nut_user_pass, 
+        gotify_url, 
+        gotify_token, 
+        ups_name, 
+        nut_polling_secs, 
+        ups_variable, 
+        discharge_status_text, 
+        charge_status_text 
+    } = args;
+
     let notifier = Notifier::new(gotify_url.as_str(), gotify_token.as_str());
 
     let interval = Duration::from_secs(nut_polling_secs);
@@ -52,7 +66,7 @@ fn watch(NotifyArgs { nut_host, nut_host_port, nut_user, nut_user_pass, gotify_u
         let ups_variable = conn.get_var(&ups_name[..], &ups_variable[..])?;
         let status = ups_variable.value();
 
-        println!("{} \t=> Got status => {}", Local::now().format("%Y-%m-%d][%H:%M:%S"), &status);
+        println!("{} \t=> Got status => {}", Local::now().format("[%Y-%m-%d]-[%H:%M:%S]"), &status);
 
         if previous_status == "" {
             previous_status = status.clone();
@@ -84,7 +98,7 @@ fn watch(NotifyArgs { nut_host, nut_host_port, nut_user, nut_user_pass, gotify_u
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let top: Top = argh::from_env();
-
+    
     match top.command {
         args::SubCommand::ListVars(args) => run_list_command(args),
         args::SubCommand::Watch(args) => watch(args),
