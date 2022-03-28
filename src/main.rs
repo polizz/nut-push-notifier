@@ -2,8 +2,8 @@ use tracing::{info, warn, debug};
 use tracing_subscriber::EnvFilter;
 use color_eyre::Report;
 
-mod ups_status;
-use ups_status::UpsStatus;
+mod ups_state;
+use ups_state::*;
 
 mod args;
 use args::{Top, ListArgs, NotifyArgs }; //NotifyArgs
@@ -50,13 +50,11 @@ fn watch(args: NotifyArgs) -> Result<(), Report> {
         ups_name, 
         nut_polling_secs, 
         ups_variable,
-        ..
-        // discharge_status_text, 
-        // charge_status_text 
+        discharge_status_spec, 
+        charge_status_spec, 
     } = args;
-
+    let mut ups_state = UpsState::new(charge_status_spec, discharge_status_spec);
     let notifier = Notifier::new(gotify_url.as_str(), gotify_token.as_str());
-
     let interval = Duration::from_secs(nut_polling_secs);
     let auth = Some(Auth::new(nut_user, Some(nut_user_pass)));
     let config = ConfigBuilder::new()
@@ -66,38 +64,35 @@ fn watch(args: NotifyArgs) -> Result<(), Report> {
         .build();
     let mut conn = Connection::new(&config)?;
 
-    let mut previous_status = UpsStatus::Startup;
+    // let mut previous_status = ups_state.status;
+    info!(%ups_state.status, "STARTUP WITH STATUS");
 
     loop {
         let ups_variable = conn.get_var(&ups_name[..], &ups_variable[..])?;
-        let status: UpsStatus = ups_variable.value().into();
+        ups_state.update_status_from_str(ups_variable.value());
 
-        debug!(?status, ?ups_variable, "ups_variable");
-        info!(%status);
+        debug!(?ups_state.status, ?ups_variable, "ups_variable");
+        info!(%ups_state.status);
 
-        if previous_status == UpsStatus::Startup {
-            previous_status = status;
-            info!(%previous_status, "STARTUP WITH STATUS");
-
-            if previous_status == UpsStatus::OnBattery {
-                let notice_params = [("message", "INIT - UPS ONBATT - Discharging"), ("priority", "10")];
-                notifier.send(&notice_params)
-            }
-        } else {
-            if status == UpsStatus::Online && previous_status == UpsStatus::OnBattery {
-                previous_status = UpsStatus::Online;
-    
-                info!("NOW ONLINE");
-
-                let notice_params = [("message", "UPS ONLINE - Charging"), ("priority", "10")];
-                notifier.send(&notice_params)
-            } else if status == UpsStatus::OnBattery && previous_status == UpsStatus::Online {
-                previous_status = UpsStatus::OnBattery;
-    
-                warn!("NOW ONBATT!!");
-
-                let notice_params = [("message", "UPS ONBATT - Discharging"), ("priority", "10")];
-                notifier.send(&notice_params)
+        if ups_state.is_state_changed() {
+            match ups_state.status.clone() {
+                UpsStatus::OnBattery => {
+                    warn!("NOW ONBATT!!");
+                    let notice_params = [("message", "UPS ONBATT - Discharging"), ("priority", "10")];
+                    notifier.send(&notice_params)
+                },
+                UpsStatus::Online => {
+                    info!("NOW ONLINE");
+                    let notice_params = [("message", "UPS ONLINE - Charging"), ("priority", "10")];
+                    notifier.send(&notice_params)
+                },
+                UpsStatus::None(unknown_status_code) => {
+                    info!(%unknown_status_code, "Encountered Unknown Status");
+                    let status = format!("UPS Unknown Status Code - {}", &unknown_status_code);
+                    let notice_params = [("message", status.as_str()), ("priority", "10")];
+                    notifier.send(&notice_params)
+                },
+                UpsStatus::Startup => (),
             }
         }
 

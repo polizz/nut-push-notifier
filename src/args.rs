@@ -3,8 +3,8 @@ use argh::FromArgs;
 #[derive(FromArgs, Debug)]
 #[argh(description = "Commands")]
 pub struct Top {
-  #[argh(subcommand)]
-  pub command: SubCommand,
+    #[argh(subcommand)]
+    pub command: SubCommand,
 }
 
 #[derive(FromArgs, Debug)]
@@ -17,17 +17,17 @@ pub enum SubCommand {
 #[derive(FromArgs, Debug)]
 #[argh(subcommand, name = "listvars", description = "List variables from ups")]
 pub struct ListArgs {
-  #[argh(option, description = "nut host", short = 'h', default = "String::from(\"localhost\")")]
-  pub nut_host: String,
+    #[argh(option, description = "nut host", short = 'h', default = "String::from(\"localhost\")")]
+    pub nut_host: String,
 
-  #[argh(option, description = "nut host port", short = 't', default = "3493")]
-  pub nut_host_port: u16,
+    #[argh(option, description = "nut host port", short = 't', default = "3493")]
+    pub nut_host_port: u16,
 
-  #[argh(option, description = "nut user", short = 'j')]
-  pub nut_user: String,
+    #[argh(option, description = "nut user", short = 'j')]
+    pub nut_user: String,
 
-  #[argh(option, description = "nut user password", short = 'x')]
-  pub nut_user_pass: String,
+    #[argh(option, description = "nut user password", short = 'x')]
+    pub nut_user_pass: String,
 }
 
 #[derive(FromArgs, Debug)]
@@ -61,8 +61,8 @@ pub struct NotifyArgs {
     pub ups_variable: String,
 
     #[argh(option, description = "discharging status text", short = 'd', default = "String::from(\"OB DISCHRG\")")]
-    pub discharge_status_text: String,
+    pub discharge_status_spec: String,
 
     #[argh(option, description = "charging status text", short = 'c', default = "String::from(\"OL CHRG\")")]
-    pub charge_status_text: String,
+    pub charge_status_spec: String,
 }
