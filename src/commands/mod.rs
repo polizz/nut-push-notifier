@@ -3,5 +3,5 @@ mod list;
 mod command;
 
 pub use watch::Watch;
-pub use list::list_command as list;
+pub use list::List;
 pub use command::{Command, CommandArgs};

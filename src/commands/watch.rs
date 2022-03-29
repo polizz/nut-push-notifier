@@ -8,19 +8,19 @@ use crate::notify::*;
 use crate::args::NotifyArgs;
 use crate::{UpsState, UpsStatus};
 
-use super::{Command, CommandArgs};
+use super::command::{Command, CommandArgs};
 
 pub struct Watch;
 
 impl Command<NotifyArgs> for Watch {
-    fn execute(args: impl CommandArgs<NotifyArgs>) -> Result<(), Report> {
+    fn execute(args: impl CommandArgs<NotifyArgs>, notifier: impl Notifier) -> Result<(), Report> {
         let NotifyArgs {
             nut_host, 
             nut_host_port, 
             nut_user, 
             nut_user_pass, 
-            gotify_url, 
-            gotify_token, 
+            gotify_url: _, 
+            gotify_token: _, 
             ups_name, 
             nut_polling_secs, 
             ups_variable,
@@ -28,7 +28,6 @@ impl Command<NotifyArgs> for Watch {
             charge_status_spec, 
         } = args.get_args();
         let mut ups_state = UpsState::new(charge_status_spec, discharge_status_spec);
-        let notifier = Notifier::new(gotify_url.as_str(), gotify_token.as_str());
         let interval = Duration::from_secs(nut_polling_secs);
         let auth = Some(Auth::new(nut_user, Some(nut_user_pass)));
         let config = ConfigBuilder::new()

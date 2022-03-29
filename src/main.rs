@@ -2,6 +2,8 @@ use tracing_subscriber::EnvFilter;
 use color_eyre::Report;
 
 mod notify;
+use notify::*;
+
 mod ups_state;
 pub use ups_state::*;
 
@@ -9,7 +11,7 @@ mod args;
 use args::Top;
 
 mod commands;
-use commands::{Command, Watch, list};
+use commands::{Command, Watch, List};
 
 fn main() -> Result<(), Report> {
     if std::env::var("RUST_BACKTRACE").is_err() {
@@ -28,8 +30,14 @@ fn main() -> Result<(), Report> {
     let top: Top = argh::from_env();
     
     match top.command {
-        args::SubCommand::ListVars(args) => list(args),
-        args::SubCommand::Watch(args) => Watch::execute(args),
+        args::SubCommand::ListVars(args) => {
+            let blank_notify = GotifyNotifier::new("".to_string(), "".to_string());
+            List::execute(args, blank_notify)
+        },
+        args::SubCommand::Watch(args) => {
+            let notifier = GotifyNotifier::new(args.gotify_url.clone(), args.gotify_token.clone());
+            Watch::execute(args, notifier)
+        },
     }
 }
 
