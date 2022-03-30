@@ -3,6 +3,18 @@ use argh::FromArgs;
 #[derive(FromArgs, Debug)]
 #[argh(description = "Commands")]
 pub struct Top {
+    #[argh(option, description = "nut host", short = 'h', default = "String::from(\"localhost\")")]
+    pub nut_host: String,
+
+    #[argh(option, description = "nut host port", short = 't', default = "3493")]
+    pub nut_host_port: u16,
+
+    #[argh(option, description = "nut user", short = 'j')]
+    pub nut_user: String,
+
+    #[argh(option, description = "nut user password", short = 'x')]
+    pub nut_user_pass: String,
+
     #[argh(subcommand)]
     pub command: SubCommand,
 }
@@ -16,35 +28,11 @@ pub enum SubCommand {
 
 #[derive(FromArgs, Debug)]
 #[argh(subcommand, name = "listvars", description = "List variables from ups")]
-pub struct ListArgs {
-    #[argh(option, description = "nut host", short = 'h', default = "String::from(\"localhost\")")]
-    pub nut_host: String,
-
-    #[argh(option, description = "nut host port", short = 't', default = "3493")]
-    pub nut_host_port: u16,
-
-    #[argh(option, description = "nut user", short = 'j')]
-    pub nut_user: String,
-
-    #[argh(option, description = "nut user password", short = 'x')]
-    pub nut_user_pass: String,
-}
+pub struct ListArgs {}
 
 #[derive(FromArgs, Debug)]
 #[argh(subcommand, name = "watch", description = "Notify on NUT state changes")]
 pub struct NotifyArgs {
-    #[argh(option, description = "nut host", short = 'h', default = "String::from(\"localhost\")")]
-    pub nut_host: String,
-
-    #[argh(option, description = "nut host port", short = 't', default = "3493")]
-    pub nut_host_port: u16,
-
-    #[argh(option, description = "nut user", short = 'j')]
-    pub nut_user: String,
-
-    #[argh(option, description = "nut user password", short = 'x')]
-    pub nut_user_pass: String,
-
     #[argh(option,  description = "notification URL", short = 'u')]
     pub gotify_url: String,
 

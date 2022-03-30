@@ -1,7 +1,6 @@
 mod watch;
 mod list;
-mod command;
 
-pub use watch::Watch;
-pub use list::List;
-pub use command::{Command, CommandArgs};
+pub use watch::{execute as watch_execute, *};
+
+pub use list::execute as list_execute;
