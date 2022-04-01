@@ -45,7 +45,7 @@ pub struct NotifyArgs {
     #[argh(option, description = "seconds to poll ups status", short = 'i', default = "60")]
     pub nut_polling_secs: u64,
 
-    #[argh(option, description = "ups variable that holds online status", short = 'v', default = "String::from(\"ups.status\")")]
+    #[argh(option, description = "ups variable that holds online status", short = 'w', default = "String::from(\"ups.status\")")]
     pub ups_variable: String,
 
     #[argh(option, description = "discharging status text", short = 'd', default = "String::from(\"OB DISCHRG\")")]
@@ -53,4 +53,10 @@ pub struct NotifyArgs {
 
     #[argh(option, description = "charging status text", short = 'c', default = "String::from(\"OL CHRG\")")]
     pub charge_status_spec: String,
+
+    #[argh(option, description = "online status text", short = 'c', default = "String::from(\"OL\")")]
+    pub online_status_spec: String,
+
+    #[argh(switch, description = "verbose online notifications", short = 'v')]
+    pub verbose_online_status: bool,
 }

@@ -29,11 +29,13 @@ fn main() -> Result<(), Report> {
 
     if let SubCommand::Watch(args) = top.command {
         let addl_args = UpsStatusSpecs {
+            online_status_spec: args.online_status_spec,
             discharge_status_spec: args.discharge_status_spec,
             charge_status_spec: args.charge_status_spec,
             ups_name: args.ups_name,
             nut_polling_secs: args.nut_polling_secs,
             ups_variable: args.ups_variable,
+            verbose_online_status: args.verbose_online_status,
         };
 
         let notifier = GotifyNotifier::new(args.gotify_url.clone(), args.gotify_token.clone());
