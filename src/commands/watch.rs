@@ -6,14 +6,18 @@ use tracing::{info, warn, debug};
 use crate::utils::{Notifier, NoticeParam};
 use crate::ups::{UpsState, UpsStatus};
 
-fn make_message_param(message: String) -> Vec<NoticeParam> {
-    vec![("message".into(), message), ("priority".into(), "10".into())]
+static ONLINE: &str = "UPS ONLINE";
+static CHARGE: &str = "UPS ONLINE - Charging";
+static ON_BATT: &str = "UPS ONBATT - Discharging";
+
+fn make_message_param<'local>(message: &'local str) -> Vec<NoticeParam> {
+    vec![("message", message), ("priority", "10")]
 }
 
 pub fn execute(mut conn: Connection, addl_args: UpsStatusSpecs, notifier: impl Notifier) -> Result<(), Report> {
-    let online_notice = make_message_param("UPS ONLINE".to_string());
-    let charge_notice = make_message_param("UPS ONLINE - Charging".to_string());
-    let on_battery_notice = make_message_param("UPS ONBATT - Discharging".to_string());
+    let online_notice = make_message_param(ONLINE);
+    let charge_notice = make_message_param(CHARGE);
+    let on_battery_notice = make_message_param(ON_BATT);
 
     let UpsStatusSpecs {
         online_status_spec,
@@ -59,7 +63,8 @@ pub fn execute(mut conn: Connection, addl_args: UpsStatusSpecs, notifier: impl N
                 UpsStatus::None(unknown_status_code) => {
                     info!(%unknown_status_code, "Encountered Unknown Status");
                     let message = format!("UPS Unknown Status Code - {}", &unknown_status_code);
-                    notifier.send(&make_message_param(message))
+                    let p_vec = make_message_param(message.as_str());
+                    notifier.send(&p_vec);
                 },
                 UpsStatus::Startup => (),
             }

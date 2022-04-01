@@ -1,7 +1,8 @@
 use std::{thread, time::Duration};
 use tracing::{span, warn, Level};
+use ureq::Error;
 
-pub type NoticeParam = (String, String);
+pub type NoticeParam<'local> = (&'local str, &'local str);
 
 pub trait Notifier {
     fn new(url: String, token: String) -> Self;
@@ -25,25 +26,21 @@ impl Notifier for GotifyNotifier {
         let notify_span = span!(Level::TRACE, "Notifying");
         let _notify_enter = notify_span.enter();
 
-        let client = reqwest::blocking::Client::new();
-        let mut resp = client
-            .post(&self.gotify_url)
-            .form(notice_params)
-            .header("x-gotify-key", &self.gotify_token)
-            .send();
+        let mut resp = ureq::post(&self.gotify_url)
+            .set("x-gotify-key", &self.gotify_token)
+            .send_form(&notice_params[..]);
 
         let retry_span = span!(Level::WARN, "Retrying Notification");
         let _retry_enter = retry_span.enter();
 
         let mut ix = 1;
-        while let Err(_) = resp {
+        while let Err(Error::Status(_code, _response)) = resp {
             warn!(%ix, "Retrying notification");
 
-            resp = client
-                .post(&self.gotify_url)
-                .form(notice_params)
-                .header("x-gotify-key", &self.gotify_token)
-                .send();
+            resp = ureq::post(&self.gotify_url)
+                .set("x-gotify-key", &self.gotify_token)
+                .send_form(&notice_params[..]);
+
             ix = ix + 1;
 
             thread::sleep(Duration::from_secs(4))
