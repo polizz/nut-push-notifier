@@ -54,7 +54,7 @@ pub struct NotifyArgs {
     #[argh(option, description = "charging status text", short = 'c', default = "String::from(\"OL CHRG\")")]
     pub charge_status_spec: String,
 
-    #[argh(option, description = "online status text", short = 'c', default = "String::from(\"OL\")")]
+    #[argh(option, description = "online status text", short = 'o', default = "String::from(\"OL\")")]
     pub online_status_spec: String,
 
     #[argh(switch, description = "verbose online notifications", short = 'v')]
