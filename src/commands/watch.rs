@@ -11,8 +11,9 @@ fn make_message_param(message: String) -> Vec<NoticeParam> {
 }
 
 pub fn execute(mut conn: Connection, addl_args: UpsStatusSpecs, notifier: impl Notifier) -> Result<(), Report> {
+    let online_notice = make_message_param("UPS ONLINE".to_string());
+    let charge_notice = make_message_param("UPS ONLINE - Charging".to_string());
     let on_battery_notice = make_message_param("UPS ONBATT - Discharging".to_string());
-    let online_notice = make_message_param("UPS ONLINE - Charging".to_string());
 
     let UpsStatusSpecs {
         online_status_spec,
@@ -44,8 +45,8 @@ pub fn execute(mut conn: Connection, addl_args: UpsStatusSpecs, notifier: impl N
         if ups_state.is_state_changed() {
             match ups_state.status.clone() {
                 UpsStatus::Charging => {
-                    warn!("NOW ONLINE, CHARGING");
-                    notifier.send(&on_battery_notice);
+                    info!("NOW ONLINE, CHARGING");
+                    notifier.send(&charge_notice);
                 },
                 UpsStatus::Online => {
                     info!("NOW ONLINE");
