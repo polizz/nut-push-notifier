@@ -19,33 +19,3 @@ pub fn make_rups_connection(
         .build();
     Connection::new(&config).unwrap()
 }
-
-pub trait UpsConnection {
-    fn get_var(&mut self, ups_name: &str, variable: &str) -> rups::Result<rups::Variable>;
-    fn list_ups(&mut self) -> rups::Result<Vec<(String, String)>>;
-    fn list_vars(&mut self, ups_name: &str) -> rups::Result<Vec<rups::Variable>>;
-}
-
-pub struct RupsConnection {
-    connection: rups::blocking::Connection,
-}
-
-impl RupsConnection {
-    pub fn new(connection: rups::blocking::Connection) -> Self {
-        Self { connection }
-    }
-}
-
-impl UpsConnection for RupsConnection {
-    fn get_var(&mut self, ups_name: &str, variable: &str) -> rups::Result<rups::Variable> {
-        self.connection.get_var(&ups_name, &variable)
-    }
-
-    fn list_ups(&mut self) -> rups::Result<Vec<(String, String)>> {
-        self.connection.list_ups()
-    }
-
-    fn list_vars(&mut self, ups_name: &str) -> rups::Result<Vec<rups::Variable>> {
-        self.connection.list_vars(&ups_name)
-    }
-}

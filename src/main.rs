@@ -24,11 +24,8 @@ fn main() -> Result<(), Report> {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-        
     let top: Top = argh::from_env();
-    // dbg!(&top);
-
-    let rups_connection = RupsConnection::new(make_rups_connection(&top));
+    let rups_connection = make_rups_connection(&top);
 
     if let SubCommand::Watch(args) = top.command {
         let addl_args = UpsStatusSpecs {
@@ -44,10 +41,4 @@ fn main() -> Result<(), Report> {
     } else {
         list_execute(rups_connection)
     }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn smoke() {}
 }
