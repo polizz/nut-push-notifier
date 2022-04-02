@@ -40,14 +40,15 @@ pub fn execute(mut conn: Connection, addl_args: UpsStatusSpecs, notifier: impl N
     info!(%ups_state.status, "STARTUP WITH STATUS");
 
     loop {
-        let ups_variable = conn.get_var(&ups_name[..], &ups_variable[..])?;
-        ups_state.update_status_from_str(&(ups_variable.value()));
+        let ups_variable = conn.get_var(&ups_name, &ups_variable)?;
+        let ups_variable_val = ups_variable.value();
+        ups_state.update_status_from_str(ups_variable_val);
 
         debug!(?ups_state.status, ?ups_variable, "ups_variable");
         info!(%ups_state.status);
 
         if ups_state.is_state_changed() {
-            match ups_state.status.clone() {
+            match ups_state.status {
                 UpsStatus::Charging => {
                     info!("NOW ONLINE, CHARGING");
                     notifier.send(&charge_notice);
@@ -60,11 +61,10 @@ pub fn execute(mut conn: Connection, addl_args: UpsStatusSpecs, notifier: impl N
                     warn!("NOW ON BATTERY!");
                     notifier.send(&on_battery_notice);
                 },
-                UpsStatus::None(unknown_status_code) => {
+                UpsStatus::None(ref unknown_status_code) => {
                     info!(%unknown_status_code, "Encountered Unknown Status");
                     let message = format!("UPS Unknown Status Code - {}", &unknown_status_code);
-                    let p_vec = make_message_param(message.as_str());
-                    notifier.send(&p_vec);
+                    notifier.send(&make_message_param(&message));
                 },
                 UpsStatus::Startup => (),
             }
@@ -74,12 +74,12 @@ pub fn execute(mut conn: Connection, addl_args: UpsStatusSpecs, notifier: impl N
     };
 }
 
-pub struct UpsStatusSpecs {
-    pub online_status_spec: String,
-    pub discharge_status_spec: String,
-    pub charge_status_spec: String,
-    pub ups_name: String,
+pub struct UpsStatusSpecs<'main> {
+    pub online_status_spec: &'main str,
+    pub discharge_status_spec: &'main str,
+    pub charge_status_spec: &'main str,
+    pub ups_name: &'main str,
+    pub ups_variable: &'main str,
     pub nut_polling_secs: u64,
-    pub ups_variable: String,
     pub verbose_online_status: bool,
 }

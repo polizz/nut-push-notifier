@@ -39,7 +39,7 @@ impl Notifier for GotifyNotifier {
 
             resp = ureq::post(&self.gotify_url)
                 .set("x-gotify-key", &self.gotify_token)
-                .send_form(&notice_params[..]);
+                .send_form(&notice_params);
 
             ix = ix + 1;
 
