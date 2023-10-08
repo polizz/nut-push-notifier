@@ -7,8 +7,18 @@ edition = "2021"
 
 [dependencies]
 argh = "0.1.7"
+anyhow = "1.0.75"
+axum = { version = "0.6.20", features = ["ws", "headers"] }
 color-eyre = "0.6.1"
+futures = "0.3"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 rups = "0.5.2"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.107"
 tracing = "0.1.32"
 tracing-subscriber = { version = "0.3.9", features = ["env-filter"]}
 ureq = "2.4.0"
+tokio = { version = "1.0", features = ["full"] }
+tokio-tungstenite = "0.20"
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.4.0", features = ["fs", "trace"] }

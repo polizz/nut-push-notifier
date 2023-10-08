@@ -16,23 +16,28 @@ impl fmt::Display for UpsStatus {
             Self::Charging => write!(f, "Charging"),
             Self::OnBattery => write!(f, "On Battery"),
             Self::Startup => write!(f, "Monitoring Started"),
-            Self::None(status) => write!(f, "Unknown UPS Status, {}", status)
+            Self::None(status) => write!(f, "Unknown UPS Status, {}", status),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UpsState<'main> {
-    pub online_status_spec: &'main str,
-    pub charge_status_spec: &'main str,
-    pub discharge_status_spec: &'main str,
+pub struct UpsState {
+    pub online_status_spec: String,
+    pub charge_status_spec: String,
+    pub discharge_status_spec: String,
     pub status: UpsStatus,
     pub verbose_online_status: bool,
     state_changed: bool,
 }
 
-impl<'main> UpsState<'main> {
-    pub fn new(online_status_spec: &'main str, charge_status_spec: &'main str, discharge_status_spec: &'main str, verbose_online_status: bool) -> Self {
+impl<'main> UpsState {
+    pub fn new(
+        online_status_spec: String,
+        charge_status_spec: String,
+        discharge_status_spec: String,
+        verbose_online_status: bool,
+    ) -> Self {
         UpsState {
             online_status_spec,
             charge_status_spec,
@@ -46,17 +51,13 @@ impl<'main> UpsState<'main> {
     pub fn update_status_from_str(&mut self, s: String) -> () {
         let next_status = match s {
             s if s == self.online_status_spec => UpsStatus::Online,
-            s if s == self.charge_status_spec => {
-                match self.verbose_online_status {
-                    true => UpsStatus::Charging,
-                    _ => UpsStatus::Online
-                }
+            s if s == self.charge_status_spec => match self.verbose_online_status {
+                true => UpsStatus::Charging,
+                _ => UpsStatus::Online,
             },
             s if s == self.discharge_status_spec => UpsStatus::OnBattery,
             str => UpsStatus::None(str),
         };
-
-        
 
         if next_status != self.status {
             self.state_changed = true;
@@ -75,21 +76,19 @@ impl<'main> UpsState<'main> {
 mod tests {
     use super::*;
 
-    struct UpsStateTester<'main> {
-        ups_state: UpsState<'main>,
+    struct UpsStateTester {
+        ups_state: UpsState,
     }
 
-    impl<'main> UpsStateTester<'main> {
+    impl<'main> UpsStateTester {
         fn new(verbose: bool) -> Self {
-            let online = "ONLINE";
-            let charge = "CHARGE";
-            let onbatt = "ONBATTERY";
+            let online = "ONLINE".to_string();
+            let charge = "CHARGE".to_string();
+            let onbatt = "ONBATTERY".to_string();
 
             let ups_state = UpsState::new(online, charge, onbatt, verbose);
 
-            UpsStateTester {
-                ups_state
-            }
+            UpsStateTester { ups_state }
         }
 
         fn set_input_str(&mut self, input: String) {
@@ -113,7 +112,7 @@ mod tests {
     fn can_update_status_from_str() {
         let online = "ONLINE".to_string();
         let mut tester = UpsStateTester::new(false);
-        
+
         tester.set_input_str(online);
 
         assert_eq!(tester.get_state().status, UpsStatus::Online);
@@ -169,3 +168,4 @@ mod tests {
         assert_eq!(tester.get_state().is_state_changed(), true);
     }
 }
+
