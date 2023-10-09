@@ -3,30 +3,12 @@ use rups::blocking::Connection;
 use tracing::{debug, info, warn};
 
 use crate::ups::{UpsState, UpsStatus};
-use crate::utils::{NoticeParam, Notifier};
-use crate::ws_server;
-
-static ONLINE: &str = "UPS ONLINE";
-static CHARGE: &str = "UPS ONLINE - Charging";
-static ON_BATT: &str = "UPS ONBATT - Discharging";
-
-fn make_message_param<'local>(message: &'local str) -> Vec<NoticeParam> {
-    vec![("message", message), ("priority", "10")]
-}
 
 pub async fn execute(
     mut conn: Connection,
     addl_args: UpsStatusSpecs,
-    notifier: impl Notifier,
+    watch_sender: tokio::sync::watch::Sender<UpsStatus>,
 ) -> Result<(), Report> {
-    let online_notice = make_message_param(ONLINE);
-    let charge_notice = make_message_param(CHARGE);
-    let on_battery_notice = make_message_param(ON_BATT);
-
-    tokio::spawn(async {
-        ws_server::startup_ws_server().await;
-    });
-
     let UpsStatusSpecs {
         online_status_spec,
         discharge_status_spec,
@@ -50,34 +32,11 @@ pub async fn execute(
         let ups_variable_val = ups_variable.value();
         ups_state.update_status_from_str(ups_variable_val);
 
-        debug!(?ups_state.status, ?ups_variable, "ups_variable");
-        info!(%ups_state.status);
-
         if ups_state.is_state_changed() {
-            match ups_state.status {
-                UpsStatus::Charging => {
-                    info!("NOW ONLINE, CHARGING");
-                    notifier.send(&charge_notice);
-                }
-                UpsStatus::Online => {
-                    info!("NOW ONLINE");
-                    notifier.send(&online_notice);
-                }
-                UpsStatus::OnBattery => {
-                    warn!("NOW ON BATTERY!");
-                    notifier.send(&on_battery_notice);
-                }
-                UpsStatus::None(ref unknown_status_code) => {
-                    info!(%unknown_status_code, "Encountered Unknown Status");
-                    let message = format!("UPS Unknown Status Code - {}", &unknown_status_code);
-                    notifier.send(&make_message_param(&message));
-                }
-                UpsStatus::Startup => (),
-            }
+            watch_sender.send(ups_state.status.clone());
         }
 
         tokio::time::sleep(std::time::Duration::from_millis(1000 * nut_polling_secs)).await;
-        // thread::sleep(interval);
     }
 }
 

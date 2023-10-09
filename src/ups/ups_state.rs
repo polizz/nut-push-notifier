@@ -168,4 +168,3 @@ mod tests {
         assert_eq!(tester.get_state().is_state_changed(), true);
     }
 }
-

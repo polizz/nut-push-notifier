@@ -12,6 +12,7 @@ axum = { version = "0.6.20", features = ["ws", "headers"] }
 color-eyre = "0.6.1"
 futures = "0.3"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+reqwest = { verion = "0.11.22", features = ["json"] }
 rups = "0.5.2"
 serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.107"

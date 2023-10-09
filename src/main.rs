@@ -1,4 +1,5 @@
 use color_eyre::Report;
+use tokio::sync::watch;
 use tracing_subscriber::EnvFilter;
 
 mod ups;
@@ -11,7 +12,7 @@ mod commands;
 use commands::*;
 
 mod ws;
-use ws::ws_server;
+use ws::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Report> {
@@ -42,8 +43,15 @@ async fn main() -> Result<(), Report> {
             verbose_online_status: args.verbose_online_status,
         };
 
-        let notifier = GotifyNotifier::new(args.gotify_url, args.gotify_token);
-        watch_execute(rups_connection, addl_args, notifier).await
+        // setup channel and insert into notifier, ws_server, and ups watcher
+        let (tx, mut rx) = watch::channel(UpsStatus::None("Initializing Monitoring".to_string()));
+
+        let notifier = GotifyNotifier::new(args.gotify_url, args.gotify_token, rx.clone());
+        notifier.listen().await;
+
+        ws_server::startup(rx.clone()).await;
+
+        watch_execute(rups_connection, addl_args, tx).await
     } else {
         list_execute(rups_connection).await
     }

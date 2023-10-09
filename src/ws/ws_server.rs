@@ -12,6 +12,7 @@ use axum::{
     Router,
 };
 
+use crate::ups::UpsStatus;
 use std::borrow::Cow;
 use std::ops::ControlFlow;
 use std::{net::SocketAddr, path::PathBuf};
@@ -29,7 +30,7 @@ use axum::extract::ws::CloseFrame;
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{sink::SinkExt, stream::StreamExt};
 
-pub async fn startup_ws_server() {
+pub async fn startup<'local>(rx: tokio::sync::watch::Receiver<UpsStatus>) {
     // tracing_subscriber::registry()
     //     .with(
     //         tracing_subscriber::EnvFilter::try_from_default_env()
