@@ -1,13 +1,13 @@
+use crate::events::StatusEvent;
+use crate::ups::UpsState;
 use color_eyre::Report;
 use rups::blocking::Connection;
-use tracing::{debug, info, warn};
-
-use crate::ups::{UpsState, UpsStatus};
+use tracing::info;
 
 pub async fn execute(
     mut conn: Connection,
     addl_args: UpsStatusSpecs,
-    watch_sender: tokio::sync::watch::Sender<UpsStatus>,
+    watch_sender: tokio::sync::watch::Sender<StatusEvent>,
 ) -> Result<(), Report> {
     let UpsStatusSpecs {
         online_status_spec,
@@ -25,16 +25,19 @@ pub async fn execute(
         discharge_status_spec,
         verbose_online_status,
     );
-    info!(%ups_state.status, "STARTUP WITH STATUS");
+    info!(%ups_state.status, "Monitoring starting up...");
 
     loop {
         let ups_variable = conn.get_var(&ups_name, &ups_variable)?;
         let ups_variable_val = ups_variable.value();
         ups_state.update_status_from_str(ups_variable_val);
 
-        if ups_state.is_state_changed() {
-            watch_sender.send(ups_state.status.clone());
-        }
+        info!("checking UPS state");
+
+        let _ = watch_sender.send(StatusEvent {
+            ups_status: ups_state.status.clone(),
+            changed: ups_state.is_state_changed(),
+        });
 
         tokio::time::sleep(std::time::Duration::from_millis(1000 * nut_polling_secs)).await;
     }
