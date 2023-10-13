@@ -1,25 +1,15 @@
-const socket = new WebSocket('ws://localhost:3000/ws');
-
-socket.addEventListener('open', function(event) {
-    socket.send('Hello Server!');
-});
+const socket = new WebSocket(`ws://${location.host}/ws`);
 
 socket.addEventListener('message', function(event) {
-    console.log('Message from server ', event.data);
+    const status_display = document.getElementById('status_display');
+    const new_status = document.createElement('p');
+
+    let data = event.data.toString()
+    if (data.toLowerCase().indexOf("online") > -1) {
+        new_status.className = 'online';
+    }
+
+    new_status.innerText = `${data} - ${new Date().toLocaleString()}`;
+    status_display.appendChild(new_status);
 });
 
-
-// setTimeout(() => {
-//     const obj = { hello: "world" };
-//     const blob = new Blob([JSON.stringify(obj, null, 2)], {
-//       type: "application/json",
-//     });
-//     console.log("Sending blob over websocket");
-//     socket.send(blob);
-// }, 1000);
-//
-// setTimeout(() => {
-//     socket.send('About done here...');
-//     console.log("Sending close over websocket");
-//     socket.close(3000, "Crash and Burn!");
-// }, 3000);

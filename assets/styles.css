@@ -1,0 +1,13 @@
+div#status_display {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+div#status_display > p {
+  margin: 0;
+  background-color: lightcoral;
+}
+
+div#status_display > p.online {
+  background-color: lightgreen;
+}
