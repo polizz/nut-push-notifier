@@ -43,6 +43,11 @@ async fn main() -> Result<(), Report> {
             verbose_online_status: args.verbose_online_status,
         };
 
+        let ws_server_opts = WsServerOpts {
+            websocket_bind_ip: args.websocket_bind_ip,
+            websocket_bind_port: args.websocket_bind_port,
+        };
+
         println!("starting channel...");
         // setup channel and insert into notifier, ws_server, and ups watcher
         let (tx, rx) = watch::channel(StatusEvent {
@@ -50,19 +55,11 @@ async fn main() -> Result<(), Report> {
             changed: true,
         });
 
-        println!("starting notifier...");
         let mut notifier = GotifyNotifier::new(args.gotify_url, args.gotify_token, rx.clone());
-        // notifier.listen().await;
-
-        println!("starting ws_server...");
-        // ws_server::startup(rx.clone()).await;
-
-        println!("starting watch loop...");
-        // watch_execute(rups_connection, addl_args, tx).await
 
         let _ = tokio::join! {
             notifier.listen(),
-            ws_server::startup(rx.clone()),
+            ws_server::startup(ws_server_opts, rx.clone()),
             watch_execute(rups_connection, addl_args, tx),
         };
     } else {

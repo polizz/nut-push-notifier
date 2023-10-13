@@ -12,6 +12,7 @@ use axum::{
 
 use crate::StatusEvent;
 // use std::ops::ControlFlow;
+use std::env;
 use std::{net::SocketAddr, path::PathBuf};
 use tower_http::{
     services::ServeDir,
@@ -22,7 +23,7 @@ use tracing::info;
 //allows to extract the IP of connecting user
 use axum::extract::connect_info::ConnectInfo;
 
-pub async fn startup<'local>(rx: tokio::sync::watch::Receiver<StatusEvent>) {
+pub async fn startup<'local>(opts: WsServerOpts, rx: tokio::sync::watch::Receiver<StatusEvent>) {
     let assets_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
 
     let app = Router::new()
@@ -36,9 +37,8 @@ pub async fn startup<'local>(rx: tokio::sync::watch::Receiver<StatusEvent>) {
         );
 
     // run it with hyper
-    // let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
     // let addr = "192.168.1.174:3000";
-    let addr = "127.0.0.1:3000";
+    let addr = format!("{}:{}", opts.websocket_bind_ip, opts.websocket_bind_port);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     tracing::debug!("ws server listening on {}", listener.local_addr().unwrap());
     axum::Server::from_tcp(listener.into_std().unwrap())
@@ -84,6 +84,11 @@ async fn handle_socket(
             return;
         }
     }
+}
+
+pub struct WsServerOpts {
+    pub websocket_bind_ip: String,
+    pub websocket_bind_port: String,
 }
 
 // helper to print contents of messages to stdout. Has special treatment for Close.

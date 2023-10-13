@@ -3,7 +3,12 @@ use argh::FromArgs;
 #[derive(FromArgs, Debug)]
 #[argh(description = "Commands")]
 pub struct Top {
-    #[argh(option, description = "nut host", short = 'h', default = "String::from(\"localhost\")")]
+    #[argh(
+        option,
+        description = "nut host",
+        short = 'h',
+        default = "String::from(\"localhost\")"
+    )]
     pub nut_host: String,
 
     #[argh(option, description = "nut host port", short = 't', default = "3493")]
@@ -23,7 +28,7 @@ pub struct Top {
 #[argh(subcommand)]
 pub enum SubCommand {
     Watch(NotifyArgs),
-    ListVars(ListArgs)
+    ListVars(ListArgs),
 }
 
 #[derive(FromArgs, Debug)]
@@ -31,30 +36,80 @@ pub enum SubCommand {
 pub struct ListArgs {}
 
 #[derive(FromArgs, Debug)]
-#[argh(subcommand, name = "watch", description = "Notify on NUT state changes")]
+#[argh(
+    subcommand,
+    name = "watch",
+    description = "Notify on NUT state changes"
+)]
 pub struct NotifyArgs {
-    #[argh(option,  description = "notification URL", short = 'u')]
+    #[argh(
+        option,
+        description = "websocket bind ip",
+        short = 'q',
+        default = "String::from(\"127.0.0.1\")"
+    )]
+    pub websocket_bind_ip: String,
+
+    #[argh(
+        option,
+        description = "websocket bind port",
+        short = 's',
+        default = "String::from(\"3000\")"
+    )]
+    pub websocket_bind_port: String,
+
+    #[argh(option, description = "notification URL", short = 'u')]
     pub gotify_url: String,
 
-    #[argh(option,  description = "notification token", short = 'p')]
+    #[argh(option, description = "notification token", short = 'p')]
     pub gotify_token: String,
 
-    #[argh(option, description = "ups name", short = 'b', default = "String::from(\"ups\")")]
+    #[argh(
+        option,
+        description = "ups name",
+        short = 'b',
+        default = "String::from(\"ups\")"
+    )]
     pub ups_name: String,
 
-    #[argh(option, description = "seconds to poll ups status", short = 'i', default = "60")]
+    #[argh(
+        option,
+        description = "seconds to poll ups status",
+        short = 'i',
+        default = "60"
+    )]
     pub nut_polling_secs: u64,
 
-    #[argh(option, description = "ups variable that holds online status", short = 'w', default = "String::from(\"ups.status\")")]
+    #[argh(
+        option,
+        description = "ups variable that holds online status",
+        short = 'w',
+        default = "String::from(\"ups.status\")"
+    )]
     pub ups_variable: String,
 
-    #[argh(option, description = "discharging status text", short = 'd', default = "String::from(\"OB DISCHRG\")")]
+    #[argh(
+        option,
+        description = "discharging status text",
+        short = 'd',
+        default = "String::from(\"OB DISCHRG\")"
+    )]
     pub discharge_status_spec: String,
 
-    #[argh(option, description = "charging status text", short = 'c', default = "String::from(\"OL CHRG\")")]
+    #[argh(
+        option,
+        description = "charging status text",
+        short = 'c',
+        default = "String::from(\"OL CHRG\")"
+    )]
     pub charge_status_spec: String,
 
-    #[argh(option, description = "online status text", short = 'o', default = "String::from(\"OL\")")]
+    #[argh(
+        option,
+        description = "online status text",
+        short = 'o',
+        default = "String::from(\"OL\")"
+    )]
     pub online_status_spec: String,
 
     #[argh(switch, description = "verbose online notifications", short = 'v')]
